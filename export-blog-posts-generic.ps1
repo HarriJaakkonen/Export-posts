@@ -20,16 +20,171 @@ if ($BlogURL -notmatch '^https?://') {
 # Load required assemblies
 Add-Type -AssemblyName "System.Web"
 
-# Category mapping - customize based on your blog structure
+# Category mapping - normalize raw categories to standard groups
+# Uses uppercase keys only to avoid case sensitivity issues in PowerShell hash tables
 $categoryMapping = @{
-    'AI Security'    = 'AI'
-    'Cloud Security' = 'Cloud'
-    'Data Security'  = 'Data'
-    'Identity'       = 'Identity'
-    'Zero Trust'     = 'Security'
-    'Entra'          = 'Identity'
-    'Azure'          = 'Cloud'
-    'Microsoft'      = 'Cloud'
+    'AI'                         = 'Artificial Intelligence'
+    'MACHINE LEARNING'           = 'Artificial Intelligence'
+    'ML'                         = 'Artificial Intelligence'
+    'LLM'                        = 'Artificial Intelligence'
+    'GENERATIVE AI'              = 'Artificial Intelligence'
+    'COPILOT'                    = 'Artificial Intelligence'
+    'SECURITY COPILOT'           = 'Artificial Intelligence'
+    'ARTIFICIAL INTELLIGENCE'    = 'Artificial Intelligence'
+    'AZURE'                      = 'Cloud'
+    'CLOUD'                      = 'Cloud'
+    'MICROSOFT AZURE'            = 'Cloud'
+    'AZURE SERVICES'             = 'Cloud'
+    'AZURE RESOURCE MANAGER'     = 'Cloud'
+    'ARM'                        = 'Cloud'
+    'SECURITY'                   = 'Security'
+    'AI SECURITY'                = 'Security'
+    'CLOUD SECURITY'             = 'Security'
+    'DATA SECURITY'              = 'Security'
+    'CYBERSECURITY'              = 'Security'
+    'M365 SECURITY'              = 'Security'
+    'DEFENDER'                   = 'Security'
+    'DEFENDER FOR CLOUD'         = 'Security'
+    'MICROSOFT DEFENDER'         = 'Security'
+    'SENTINEL'                   = 'Security'
+    'MICROSOFT SENTINEL'         = 'Security'
+    'INCIDENT RESPONSE'          = 'Security'
+    'THREAT MANAGEMENT'          = 'Security'
+    'COMPLIANCE'                 = 'Security'
+    'MICROSOFT SECURITY UPDATES' = 'Security'
+    'IDENTITY'                   = 'Identity'
+    'ENTRA'                      = 'Identity'
+    'ENTRA ID'                   = 'Identity'
+    'MICROSOFT ENTRA'            = 'Identity'
+    'AZURE AD'                   = 'Identity'
+    'AZURE ACTIVE DIRECTORY'     = 'Identity'
+    'IAM'                        = 'Identity'
+    'ACCESS MANAGEMENT'          = 'Identity'
+    'CONDITIONAL ACCESS'         = 'Identity'
+    'MFA'                        = 'Identity'
+    'AUTHENTICATION'             = 'Identity'
+    'ZERO TRUST'                 = 'Identity'
+    'CROSS-TENANT ACCESS'        = 'Identity'
+    'ENTRA PRIVATE ACCESS'       = 'Identity'
+    'MANAGEMENT'                 = 'Management'
+    'AUTOMATION'                 = 'Management'
+    'INTUNE'                     = 'Management'
+    'MDM'                        = 'Management'
+    'ENDPOINT MANAGEMENT'        = 'Management'
+    'CONFIGURATION MANAGER'      = 'Management'
+    'GOVERNANCE'                 = 'Management'
+    'POLICY'                     = 'Management'
+    'MONITORING'                 = 'Management'
+    'DEVELOPMENT'                = 'Development'
+    'DEVOPS'                     = 'Development'
+    'CI/CD'                      = 'Development'
+    'GITHUB'                     = 'Development'
+    'DEVELOPER'                  = 'Development'
+    'PROGRAMMING'                = 'Development'
+    'CODE'                       = 'Development'
+    'SOFTWARE'                   = 'Development'
+    'COLLABORATION'              = 'Collaboration'
+    'MICROSOFT 365'              = 'Collaboration'
+    'M365'                       = 'Collaboration'
+    'TEAMS'                      = 'Collaboration'
+    'MICROSOFT TEAMS'            = 'Collaboration'
+    'SHAREPOINT'                 = 'Collaboration'
+    'EXCHANGE'                   = 'Collaboration'
+    'OUTLOOK'                    = 'Collaboration'
+    'OFFICE 365'                 = 'Collaboration'
+    'OFFICE'                     = 'Collaboration'
+    'DATA'                       = 'Data'
+    'ANALYTICS'                  = 'Data'
+    'BI'                         = 'Data'
+    'BUSINESS INTELLIGENCE'      = 'Data'
+    'POWER BI'                   = 'Data'
+    'SQL'                        = 'Data'
+    'DATABASE'                   = 'Data'
+    'KUSTO'                      = 'Data'
+    'KQL'                        = 'Data'
+    'LEARNING'                   = 'Learning'
+    'TRAINING'                   = 'Learning'
+    'CERTIFICATION'              = 'Learning'
+    'COURSE'                     = 'Learning'
+    'EDUCATION'                  = 'Learning'
+    'COMMUNITY'                  = 'Community'
+    'MVP'                        = 'Community'
+    'USER GROUP'                 = 'Community'
+    'CONFERENCE'                 = 'Community'
+    'EVENT'                      = 'Community'
+    'COMPANY CULTURE'            = 'Community'
+    'UPDATES'                    = 'Updates'
+    'NEWS'                       = 'Updates'
+    'ANNOUNCEMENTS'              = 'Updates'
+    'RELEASE NOTES'              = 'Updates'
+    'AMA'                        = 'Updates'
+    'DISPLAY'                    = 'Development'
+}
+
+# Function to normalize category using smart matching
+function Normalize-Category {
+    param(
+        [string]$RawCategory
+    )
+    
+    if (-not $RawCategory -or $RawCategory.Trim() -eq '') {
+        return 'Uncategorized'
+    }
+    
+    $trimmed = $RawCategory.Trim()
+    
+    # Direct mapping
+    if ($categoryMapping.ContainsKey($trimmed)) {
+        return $categoryMapping[$trimmed]
+    }
+    
+    # Case-insensitive exact match
+    $upperCat = $trimmed.ToUpper()
+    if ($categoryMapping.ContainsKey($upperCat)) {
+        return $categoryMapping[$upperCat]
+    }
+    
+    # Partial matching - find if category contains or is contained in a mapping key
+    foreach ($key in $categoryMapping.Keys) {
+        if ($upperCat.Contains($key.ToUpper()) -or $key.ToUpper().Contains($upperCat)) {
+            return $categoryMapping[$key]
+        }
+    }
+    
+    # Keyword-based matching for complex cases
+    if ($upperCat -match '(SECURITY|DEFENDER|SENTINEL|THREAT|ATTACK|BREACH)') {
+        return 'Security'
+    }
+    if ($upperCat -match '(AZURE|CLOUD|AWS|GCP)') {
+        return 'Cloud'
+    }
+    if ($upperCat -match '(ENTRA|IDENTITY|AUTH|AAD|AD)') {
+        return 'Identity'
+    }
+    if ($upperCat -match '(AI|COPILOT|ML|LLM|ARTIFICIAL|MACHINE LEARNING)') {
+        return 'Artificial Intelligence'
+    }
+    if ($upperCat -match '(TEAMS|SHAREPOINT|EXCHANGE|OUTLOOK|365|M365)') {
+        return 'Collaboration'
+    }
+    if ($upperCat -match '(INTUNE|MANAGEMENT|GOVERNANCE|POLICY|ENDPOINT)') {
+        return 'Management'
+    }
+    if ($upperCat -match '(DEVOPS|CI|CD|GITHUB|DEV|CODE)') {
+        return 'Development'
+    }
+    if ($upperCat -match '(DATA|ANALYTICS|BI|SQL|DATABASE)') {
+        return 'Data'
+    }
+    if ($upperCat -match '(TRAINING|LEARNING|EDUCATION|COURSE|CERT)') {
+        return 'Learning'
+    }
+    if ($upperCat -match '(UPDATE|NEWS|ANNOUNCEMENT|RELEASE|AMA)') {
+        return 'Updates'
+    }
+    
+    # Default: use original category if no match found
+    return $trimmed
 }
 
 # Function to get post date from metadata
@@ -172,18 +327,52 @@ function Get-ReportingCategory {
     return $Category
 }
 
+# Function to auto-discover RSS feed URL from HTML head section
+function Get-RSSFeedURL {
+    param([string]$Content, [string]$BlogURL)
+    
+    $rssUrls = @()
+    
+    # Pattern 1: Look for RSS link in HTML head
+    if ($Content -match '<link\s+rel="alternate"\s+type="application/rss\+xml"[^>]*href="([^"]+)"') {
+        $rssUrls += $matches[1]
+    }
+    
+    # Pattern 2: Alternative order of attributes
+    if ($Content -match '<link[^>]*type="application/rss\+xml"[^>]*href="([^"]+)"') {
+        $rssUrls += $matches[1]
+    }
+    
+    # Pattern 3: Atom feed
+    if ($Content -match '<link\s+rel="alternate"\s+type="application/atom\+xml"[^>]*href="([^"]+)"') {
+        $rssUrls += $matches[1]
+    }
+    
+    # Return unique URLs
+    return $rssUrls | Select-Object -Unique
+}
+
 # Function to detect blog platform type
 function Get-BlogPlatform {
     param([string]$Content, [string]$BlogURL)
     
+    # Check for MVP profile first
+    if ($BlogURL -match 'mvp\.microsoft\.com/') { return 'MVP-Profile' }
+    
     # Check for WordPress.com first (before generic WordPress check)
     if ($Content -match 'wordpress.com|jetpack|blog_id.*26086|data-blog') { return 'WordPress.com' }
+    
+    # Check for Ghost CMS
+    if ($Content -match 'ghost|by-line\.|post-card-image|gh-card-wrapper') { return 'Ghost' }
+    
+    # Check for Squarespace
+    if ($Content -match 'sqs|squarespace-|data-edit-lock') { return 'Squarespace' }
     
     # Check for specific platform markers
     if ($Content -match 'archive__item') { return 'Jekyll' }
     if ($Content -match 'class="listing-item".*?class="title"') { return 'DisplayPostsListing' }
     if ($Content -match 'wix-essential-viewer-model|communities-blog-ooi') { return 'Wix' }
-    if ($Content -match 'wp-content|wp-admin') { return 'WordPress' }
+    if ($Content -match 'wp-content|wp-admin|amphibious') { return 'WordPress' }
     if ($Content -match 'class="[^"]*compact-card') { return 'Hugo' }
     if ($Content -match 'class="post-card"') { return 'Custom-PostCard' }
     if ($Content -match 'class="post-' -and $Content -match 'article') { return 'WordPress' }
@@ -283,11 +472,29 @@ function Get-WordPressCOMPosts {
                                 else {
                                     $date = [datetime]::Parse($dateStr)
                                 }
-                                
                                 if ($date -ge $StartDate -and $date -le $EndDate) {
+                                    # Extract category from WordPress.com API
+                                    # Categories are returned as a hashtable/object, not an array
+                                    $rawCategory = "Uncategorized"
+                                    if ($post.categories -and ($post.categories | Measure-Object).Count -gt 0) {
+                                        $categoryObj = $post.categories | Get-Member -MemberType NoteProperty | Select-Object -First 1
+                                        if ($categoryObj) {
+                                            $rawCategory = $post.categories.($categoryObj.Name).name
+                                        }
+                                    }
+                                    elseif ($post.tags -and ($post.tags | Measure-Object).Count -gt 0) {
+                                        $tagObj = $post.tags | Get-Member -MemberType NoteProperty | Select-Object -First 1
+                                        if ($tagObj) {
+                                            $rawCategory = $post.tags.($tagObj.Name).name
+                                        }
+                                    }
+                                    
+                                    # Normalize category to standard format
+                                    $category = Normalize-Category -RawCategory $rawCategory
+                                    
                                     $posts += [PSCustomObject]@{
                                         Date     = $date.ToString('yyyy-MM-dd')
-                                        Category = "Uncategorized"
+                                        Category = $category
                                         Title    = $title
                                         URL      = $url
                                         FileName = (Split-Path -Leaf $url)
@@ -653,6 +860,555 @@ function Get-PostCategoriesFromContent {
     return $categories | Select-Object -Unique
 }
 
+# Function to extract vanilla HTML blog posts (generic extractor)
+function Get-VanillaHTMLPosts {
+    param(
+        [string]$Content,
+        [datetime]$StartDate,
+        [datetime]$EndDate,
+        [string]$BlogURL
+    )
+    
+    $posts = @()
+    
+    # Pattern 1: Simple links in Recent Posts section (like justinjackson.ca)
+    # Look for <a href="/post-slug">Post Title</a> patterns within a blog or posts section
+    $linkPattern = '<a[^>]*href="([^"]+)"[^>]*class="[^"]*(?:post|article|link)[^"]*"[^>]*>([^<]+)</a>'
+    $matches = [regex]::Matches($Content, $linkPattern, 'IgnoreCase')
+    
+    if ($matches.Count -eq 0) {
+        # Pattern 2: Generic article link pattern
+        $linkPattern = '<a[^>]*href="(/[^/"]+)"[^>]*>([^<]{10,150})</a>'
+        $matches = [regex]::Matches($Content, $linkPattern, 'IgnoreCase')
+    }
+    
+    foreach ($match in $matches) {
+        try {
+            $href = $match.Groups[1].Value.Trim()
+            $title = $match.Groups[2].Value.Trim() | ForEach-Object { [System.Web.HttpUtility]::HtmlDecode($_) }
+            
+            # Skip common navigation items
+            if ($title -match '^(Home|About|Contact|Posts|Articles|Blog|Services|Subscribe|Newsletter|Categories|Tags|Archive|Search|All|More)$' -or $href -eq '/') {
+                continue
+            }
+            
+            # Skip if title too short or looks like nav
+            if ($title.Length -lt 5) {
+                continue
+            }
+            
+            # Construct full URL
+            if ($href -match '^https?://') {
+                $postURL = $href
+            }
+            elseif ($href -match '^/') {
+                $postURL = "$BlogURL$href"
+            }
+            else {
+                $postURL = "$BlogURL/$href"
+            }
+            
+            # Try to fetch the post page to get date
+            Write-Host "  Fetching: $title" -ForegroundColor Gray
+            $postContent = Get-ContentFromURL -URL $postURL
+            
+            if ($postContent) {
+                $date = $null
+                
+                # Pattern 1: <time datetime="2024-12-05T...">
+                if ($postContent -match '<time[^>]*datetime="(\d{4}-\d{2}-\d{2})') {
+                    $date = [datetime]::Parse($matches[1])
+                }
+                # Pattern 2: Published on Month Day(st/nd/rd/th), Year
+                elseif ($postContent -match 'Published\s+on\s+([A-Za-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})') {
+                    try {
+                        $monthName = $matches[1]
+                        $day = [int]$matches[2]
+                        $year = [int]$matches[3]
+                        
+                        $monthMap = @{
+                            'January' = 1; 'February' = 2; 'March' = 3; 'April' = 4; 'May' = 5; 'June' = 6
+                            'July' = 7; 'August' = 8; 'September' = 9; 'October' = 10; 'November' = 11; 'December' = 12
+                        }
+                        if ($monthMap[$monthName]) {
+                            $month = $monthMap[$monthName]
+                            $date = [datetime]::new($year, $month, $day)
+                        }
+                    }
+                    catch {}
+                }
+                # Pattern 3: <span>December 5, 2024</span> or similar
+                elseif ($postContent -match '<span>([^<]*?(January|February|March|April|May|June|July|August|September|October|November|December)[^<]*?\d{4})[^<]*</span>') {
+                    try {
+                        $date = [datetime]::Parse($matches[1])
+                    }
+                    catch {}
+                }
+                # Pattern 4: Meta tags like <meta property="article:published_time" content="2024-12-05">
+                elseif ($postContent -match '<meta[^>]*property="article:published_time"[^>]*content="(\d{4}-\d{2}-\d{2})') {
+                    $date = [datetime]::Parse($matches[1])
+                }
+                # Pattern 5: JSON-LD datePublished
+                elseif ($postContent -match '"datePublished"\s*:\s*"(\d{4}-\d{2}-\d{2})') {
+                    $date = [datetime]::Parse($matches[1])
+                }
+                # Pattern 6: Posted on or Updated formats
+                elseif ($postContent -match '(?:Posted|Updated|Published)\s+(?:on\s+)?(?:the\s+)?(\d{1,2})?[\s\w]*(\d{4}-\d{2}-\d{2}|\d{1,2}/\d{1,2}/\d{4}|[A-Za-z]+\s+\d{1,2},?\s+\d{4})') {
+                    try {
+                        $dateStr = $matches[2]
+                        $date = [datetime]::Parse($dateStr)
+                    }
+                    catch {}
+                }
+                
+                # If we found a date and it's in range, add it
+                if ($date -and ($date -ge $StartDate -and $date -le $EndDate)) {
+                    # Check if already exists (by URL)
+                    $exists = $posts | Where-Object { $_.URL -eq $postURL }
+                    if (-not $exists) {
+                        $posts += [PSCustomObject]@{
+                            Date     = $date.ToString('yyyy-MM-dd')
+                            Category = "Uncategorized"
+                            Title    = $title
+                            URL      = $postURL
+                            FileName = (Split-Path -Leaf $postURL)
+                        }
+                    }
+                }
+            }
+        }
+        catch {
+            # Silently skip on error
+        }
+    }
+    
+    return $posts
+}
+
+# Function to extract posts from WordPress blogs using RSS feed auto-discovery
+function Get-WordPressRSSPosts {
+    param(
+        [string]$BlogURL,
+        [string]$Content,
+        [datetime]$StartDate,
+        [datetime]$EndDate
+    )
+    
+    $posts = @()
+    
+    # Try to find RSS feed URL from HTML head
+    $discoveredFeeds = Get-RSSFeedURL -Content $Content -BlogURL $BlogURL
+    
+    # Standard WordPress RSS feed URLs to try
+    $feedUrls = @()
+    if ($discoveredFeeds) {
+        $feedUrls += $discoveredFeeds
+    }
+    
+    # Add standard WordPress locations
+    $feedUrls += @(
+        "$BlogURL/feed/",
+        "$BlogURL/feed",
+        "$BlogURL/rss/",
+        "$BlogURL/rss",
+        "$BlogURL/feed/rss/",
+        "$BlogURL/?feed=rss2",
+        "$BlogURL/index.php/feed/"
+    )
+    
+    foreach ($feedUrl in $feedUrls) {
+        try {
+            $response = Invoke-WebRequest -Uri $feedUrl -TimeoutSec 10 -ErrorAction SilentlyContinue
+            
+            if ($response.StatusCode -eq 200) {
+                $feed = $response.Content
+                [xml]$rssContent = $feed
+                
+                foreach ($item in $rssContent.rss.channel.item) {
+                    try {
+                        $date = [datetime]::Parse($item.pubDate)
+                        $title = if ($item.title -is [string]) { $item.title } else { $item.title.InnerText }
+                        $url = if ($item.link -is [string]) { $item.link } else { $item.link.InnerText }
+                        $category = "Uncategorized"
+                        
+                        # Try to extract category
+                        if ($item.category) {
+                            $categories = @($item.category)
+                            if ($categories.Count -gt 0) {
+                                $catText = if ($categories[0] -is [string]) { $categories[0] } else { $categories[0].InnerText }
+                                if ($catText -and $catText.Length -gt 0) {
+                                    $category = Normalize-Category -Category $catText
+                                }
+                            }
+                        }
+                        
+                        if ($date -ge $StartDate -and $date -le $EndDate) {
+                            $posts += [PSCustomObject]@{
+                                Date     = $date.ToString('yyyy-MM-dd')
+                                Category = $category
+                                Title    = $title
+                                URL      = $url
+                                FileName = (Split-Path -Leaf $url)
+                            }
+                        }
+                    }
+                    catch {
+                        # Skip items that fail to parse
+                    }
+                }
+                
+                if ($posts.Count -gt 0) {
+                    return $posts
+                }
+            }
+        }
+        catch {
+            # Try next feed URL
+        }
+    }
+    
+    return $posts
+}
+
+# Function to extract posts from Ghost CMS
+function Get-GhostPosts {
+    param(
+        [string]$BlogURL,
+        [datetime]$StartDate,
+        [datetime]$EndDate
+    )
+    
+    $posts = @()
+    
+    # Ghost has a standard RSS feed endpoint
+    $feedUrls = @(
+        "$BlogURL/rss/",
+        "$BlogURL/rss",
+        "$BlogURL/feed.xml",
+        "$BlogURL/feed/"
+    )
+    
+    foreach ($feedUrl in $feedUrls) {
+        try {
+            $response = Invoke-WebRequest -Uri $feedUrl -TimeoutSec 10 -ErrorAction SilentlyContinue
+            $feed = $response.Content
+            
+            if ($feed) {
+                # Parse RSS feed
+                [xml]$rssContent = $feed
+                
+                foreach ($item in $rssContent.rss.channel.item) {
+                    try {
+                        $date = [datetime]::Parse($item.pubDate)
+                        # Handle both element and text nodes
+                        $title = if ($item.title -is [string]) { $item.title } else { $item.title.InnerText }
+                        $url = if ($item.link -is [string]) { $item.link } else { $item.link.InnerText }
+                        $category = "Uncategorized"
+                        
+                        # Try to extract category from category elements
+                        if ($item.category) {
+                            $categories = @($item.category)
+                            if ($categories.Count -gt 0) {
+                                $firstCat = $categories[0]
+                                $catText = if ($firstCat -is [string]) { $firstCat } else { $firstCat.InnerText }
+                                if ($catText -and $catText.Length -gt 0) {
+                                    $category = Normalize-Category -Category $catText
+                                }
+                            }
+                        }
+                        
+                        if ($date -ge $StartDate -and $date -le $EndDate) {
+                            $posts += [PSCustomObject]@{
+                                Date     = $date.ToString('yyyy-MM-dd')
+                                Category = $category
+                                Title    = $title
+                                URL      = $url
+                                FileName = (Split-Path -Leaf $url)
+                            }
+                        }
+                    }
+                    catch {
+                        # Skip items that fail to parse
+                    }
+                }
+                
+                if ($posts.Count -gt 0) {
+                    return $posts
+                }
+            }
+        }
+        catch {
+            # Try next feed URL
+        }
+    }
+    
+    return $posts
+}
+
+# Function to extract posts from Squarespace
+function Get-SquarespacePosts {
+    param(
+        [string]$BlogURL,
+        [datetime]$StartDate,
+        [datetime]$EndDate
+    )
+    
+    $posts = @()
+    
+    # Squarespace often has RSS feed
+    $feedUrls = @(
+        "$BlogURL/blog?format=rss",
+        "$BlogURL/blog/feed",
+        "$BlogURL/feed.xml",
+        "$BlogURL/?format=rss"
+    )
+    
+    foreach ($feedUrl in $feedUrls) {
+        try {
+            $response = Invoke-WebRequest -Uri $feedUrl -TimeoutSec 10 -ErrorAction SilentlyContinue
+            $feed = $response.Content
+            
+            if ($feed) {
+                [xml]$rssContent = $feed
+                
+                foreach ($item in $rssContent.rss.channel.item) {
+                    try {
+                        $date = [datetime]::Parse($item.pubDate)
+                        $title = $item.title
+                        $url = $item.link
+                        $category = "Uncategorized"
+                        
+                        if ($date -ge $StartDate -and $date -le $EndDate) {
+                            $posts += [PSCustomObject]@{
+                                Date     = $date.ToString('yyyy-MM-dd')
+                                Category = $category
+                                Title    = $title
+                                URL      = $url
+                                FileName = (Split-Path -Leaf $url)
+                            }
+                        }
+                    }
+                    catch {
+                        # Skip items that fail to parse
+                    }
+                }
+                
+                if ($posts.Count -gt 0) {
+                    return $posts
+                }
+            }
+        }
+        catch {
+            # Try next feed URL
+        }
+    }
+    
+    return $posts
+}
+
+# Function to get blog URL from MVP profile ID (uses MVP profile ID to look up blog)
+function Get-MVPBlogURLFromProfile {
+    param(
+        [string]$MVPProfileURL
+    )
+    
+    # MVP profiles are React SPAs, so static extraction won't work
+    # This would require Selenium or Playwright integration to execute JavaScript
+    # For now, return null and let the user provide blog URL separately
+    return $null
+}
+
+# Function to extract blog URL from MVP profile
+function Get-MVPBlogURL {
+    param(
+        [string]$MVPProfileURL
+    )
+    
+    # First try API approach
+    $blogUrl = Get-MVPBlogURLFromProfile -MVPProfileURL $MVPProfileURL
+    if ($blogUrl) {
+        return $blogUrl
+    }
+    
+    # Fallback: try web scraping (for static MVP profiles or older pages)
+    try {
+        $response = Invoke-WebRequest -Uri $MVPProfileURL -TimeoutSec 10 -ErrorAction SilentlyContinue
+        
+        if ($response.StatusCode -eq 200) {
+            $content = $response.Content
+            
+            # Look for blog/website links in the profile
+            if ($content -match 'href="(https?://[^"]*(?:blog|website|\.com|\.io)[^"]*)"\s*(?:target="_blank"|[^>])*>.*?(?:Blog|Website|Personal)') {
+                return $matches[1]
+            }
+            
+            # Try generic external link extraction
+            $allLinks = [regex]::Matches($content, 'href="(https?://[^"]+)"')
+            $socialDomains = @('twitter.com', 'linkedin.com', 'github.com', 'facebook.com', 'instagram.com', 'youtube.com', 'reddit.com', 'microsoft.com', 'mvp.microsoft.com')
+            
+            foreach ($link in $allLinks) {
+                $url = $link.Groups[1].Value
+                
+                if ($socialDomains | Where-Object { $url -like "*$_*" }) {
+                    continue
+                }
+                
+                if ($url -match '(?:blog|post|article|page)') {
+                    return $url
+                }
+            }
+        }
+    }
+    catch {
+        # Silently fail
+    }
+    
+    return $null
+}
+
+# Function to extract blog posts from MVP profile by discovering blog URL
+function Get-MVPBlogPosts {
+    param(
+        [string]$MVPProfileURL,
+        [datetime]$StartDate,
+        [datetime]$EndDate
+    )
+    
+    $posts = @()
+    
+    # MVP profiles are React Single Page Applications loaded via JavaScript
+    # Static HTML extraction doesn't reveal blog links
+    # Check if there's a common blog convention or known blog URL pattern
+    
+    # Try to detect MVP ID and suggest looking for known blog patterns
+    if ($MVPProfileURL -match '/PublicProfile/(\d+)') {
+        $mvpId = $matches[1]
+        Write-Host "Note: MVP profiles are dynamic (React SPA). Blog link extraction requires JavaScript execution." -ForegroundColor DarkYellow
+        Write-Host "Common alternatives:" -ForegroundColor DarkYellow
+        Write-Host "  1. Check MVP's blog link from their profile page directly" -ForegroundColor DarkYellow
+        Write-Host "  2. If you know their blog URL, use that directly instead" -ForegroundColor DarkYellow
+    }
+    
+    # Try generic blog URL extraction with common domains
+    $commonBlogDomains = @(
+        'wordpress.com',
+        'medium.com', 
+        'dev.to',
+        'hashnode.com',
+        'substack.com',
+        'ghost.io'
+    )
+    
+    # Extract potential blog URL from MVP profile page content
+    try {
+        $response = Invoke-WebRequest -Uri $MVPProfileURL -TimeoutSec 10 -ErrorAction SilentlyContinue
+        
+        if ($response.StatusCode -eq 200) {
+            $content = $response.Content
+            
+            # Look for any blog URLs in the HTML
+            foreach ($domain in $commonBlogDomains) {
+                if ($content -match "(https?://[^/]*$domain[^""'`s]+)") {
+                    $blogUrl = $matches[1] -replace "[""'>`s]+$", ""
+                    
+                    if ($blogUrl -like 'http*') {
+                        Write-Host "Found potential blog URL: $blogUrl" -ForegroundColor Gray
+                        
+                        # Try to extract posts from discovered blog
+                        try {
+                            $blogResponse = Invoke-WebRequest -Uri $blogUrl -TimeoutSec 10 -ErrorAction SilentlyContinue
+                            if ($blogResponse.StatusCode -eq 200) {
+                                $blogContent = $blogResponse.Content
+                                
+                                # Detect platform and extract
+                                $platform = Get-BlogPlatform -Content $blogContent -BlogURL $blogUrl
+                                
+                                if ($platform -eq 'WordPress.com') {
+                                    $wpcomPosts = Get-WordPressCOMPosts -StartDate $StartDate -EndDate $EndDate -BlogURL $blogUrl
+                                    if ($wpcomPosts.Count -gt 0) {
+                                        return $wpcomPosts
+                                    }
+                                }
+                                elseif ($platform -eq 'Ghost') {
+                                    $ghostPosts = Get-GhostPosts -StartDate $StartDate -EndDate $EndDate -BlogURL $blogUrl
+                                    if ($ghostPosts.Count -gt 0) {
+                                        return $ghostPosts
+                                    }
+                                }
+                                elseif ($platform -eq 'WordPress') {
+                                    $wpPosts = Get-WordPressRSSPosts -Content $blogContent -StartDate $StartDate -EndDate $EndDate -BlogURL $blogUrl
+                                    if ($wpPosts.Count -gt 0) {
+                                        return $wpPosts
+                                    }
+                                }
+                                
+                                # Try generic RSS
+                                $discoveredFeeds = Get-RSSFeedURL -Content $blogContent -BlogURL $blogUrl
+                                if ($discoveredFeeds) {
+                                    foreach ($feedUrl in $discoveredFeeds) {
+                                        try {
+                                            $feedResponse = Invoke-WebRequest -Uri $feedUrl -TimeoutSec 10 -ErrorAction SilentlyContinue
+                                            if ($feedResponse.StatusCode -eq 200) {
+                                                [xml]$rssContent = $feedResponse.Content
+                                                foreach ($item in $rssContent.rss.channel.item) {
+                                                    try {
+                                                        $date = [datetime]::Parse($item.pubDate)
+                                                        $title = if ($item.title -is [string]) { $item.title } else { $item.title.InnerText }
+                                                        $url = if ($item.link -is [string]) { $item.link } else { $item.link.InnerText }
+                                                        $category = "Uncategorized"
+                                                        
+                                                        if ($item.category) {
+                                                            $categories = @($item.category)
+                                                            if ($categories.Count -gt 0) {
+                                                                $catText = if ($categories[0] -is [string]) { $categories[0] } else { $categories[0].InnerText }
+                                                                if ($catText -and $catText.Length -gt 0) {
+                                                                    $category = Normalize-Category -Category $catText
+                                                                }
+                                                            }
+                                                        }
+                                                        
+                                                        if ($date -ge $StartDate -and $date -le $EndDate) {
+                                                            $posts += [PSCustomObject]@{
+                                                                Date     = $date.ToString('yyyy-MM-dd')
+                                                                Category = $category
+                                                                Title    = $title
+                                                                URL      = $url
+                                                                FileName = (Split-Path -Leaf $url)
+                                                            }
+                                                        }
+                                                    }
+                                                    catch {
+                                                        # Skip items that fail
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        catch {
+                                            # Try next feed
+                                        }
+                                    }
+                                }
+                                
+                                if ($posts.Count -gt 0) {
+                                    return $posts
+                                }
+                            }
+                        }
+                        catch {
+                            # Failed to fetch blog, try next
+                        }
+                    }
+                }
+            }
+        }
+    }
+    catch {
+        # Failed to fetch MVP profile
+    }
+    
+    return $posts
+}
+
 # Main script logic
 Write-Host "Blog Post Export - Option 2 (Web-based)" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -721,7 +1477,20 @@ if ($exportCount -eq 0) {
         Write-Host "Detected platform: $platform" -ForegroundColor Gray
         
         # Extract posts based on detected platform
-        if ($platform -eq 'WordPress.com') {
+        if ($platform -eq 'MVP-Profile') {
+            # MVP Microsoft profile - extract blog URL and posts
+            Write-Host "Detected MVP Microsoft profile" -ForegroundColor Gray
+            $mvpBlogPosts = Get-MVPBlogPosts -MVPProfileURL $BlogURL -StartDate $StartDate -EndDate $EndDate
+            if ($mvpBlogPosts.Count -gt 0) {
+                $posts += $mvpBlogPosts
+                $exportCount += $mvpBlogPosts.Count
+                Write-Host "Found $($mvpBlogPosts.Count) posts from MVP's blog"
+            }
+            else {
+                Write-Host "No blog found or no posts extracted from MVP profile"
+            }
+        }
+        elseif ($platform -eq 'WordPress.com') {
             # WordPress.com hosted blog (REST API)
             Write-Host "Detected WordPress.com blog" -ForegroundColor Gray
             $wpcomPosts = Get-WordPressCOMPosts -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL
@@ -754,38 +1523,66 @@ if ($exportCount -eq 0) {
             Write-Host "Found $($dplPosts.Count) posts"
         }
         elseif ($platform -eq 'WordPress') {
-            # First, try to fetch from /blog page if homepage didn't work
-            $blogPageUrl = "$BlogURL/blog"
-            $blogPageResponse = Invoke-WebRequest -Uri $blogPageUrl -TimeoutSec $RequestTimeout -ErrorAction SilentlyContinue
+            # Try WordPress RSS feed auto-discovery first
+            Write-Host "Attempting WordPress RSS feed auto-discovery..." -ForegroundColor Gray
+            $wpRSSPosts = Get-WordPressRSSPosts -Content $content -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL
             
-            # Check if blog page has Display Posts Listing
-            if ($blogPageResponse -and ($blogPageResponse.Content -match 'class="listing-item".*?class="title"')) {
-                Write-Host "Found Display Posts Listing on /blog page" -ForegroundColor Gray
-                $dplPosts = Get-DisplayPostsListingPosts -Content $blogPageResponse.Content -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL
-                $posts += $dplPosts
-                $exportCount += $dplPosts.Count
-                Write-Host "Found $($dplPosts.Count) posts on /blog page"
+            if ($wpRSSPosts.Count -gt 0) {
+                $posts += $wpRSSPosts
+                $exportCount += $wpRSSPosts.Count
+                Write-Host "Found $($wpRSSPosts.Count) posts via RSS feed"
             }
             else {
-                # Check if it's WP Grid Builder (check for /tutorials/ page)
-                $tutorialsUrl = "$BlogURL/tutorials/"
-                $tutorialsResponse = Invoke-WebRequest -Uri $tutorialsUrl -TimeoutSec $RequestTimeout -ErrorAction SilentlyContinue
+                # Fallback to traditional WordPress extraction
+                # First, try to fetch from /blog page if homepage didn't work
+                $blogPageUrl = "$BlogURL/blog"
+                $blogPageResponse = Invoke-WebRequest -Uri $blogPageUrl -TimeoutSec $RequestTimeout -ErrorAction SilentlyContinue
                 
-                if ($tutorialsResponse -and $tutorialsResponse.Content -like "*wpgb-card*") {
-                    Write-Host "Detected WP Grid Builder plugin, using /tutorials/ page" -ForegroundColor Gray
-                    $wpgbPosts = Get-WPGridBuilderPosts -Content $tutorialsResponse.Content -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL -PageURL $tutorialsUrl
-                    $posts += $wpgbPosts
-                    $exportCount += $wpgbPosts.Count
-                    Write-Host "Found $($wpgbPosts.Count) posts on WP Grid Builder /tutorials/ page"
+                # Check if blog page has Display Posts Listing
+                if ($blogPageResponse -and ($blogPageResponse.Content -match 'class="listing-item".*?class="title"')) {
+                    Write-Host "Found Display Posts Listing on /blog page" -ForegroundColor Gray
+                    $dplPosts = Get-DisplayPostsListingPosts -Content $blogPageResponse.Content -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL
+                    $posts += $dplPosts
+                    $exportCount += $dplPosts.Count
+                    Write-Host "Found $($dplPosts.Count) posts on /blog page"
                 }
                 else {
-                    # Use standard WordPress extraction
-                    $wpPosts = Get-WordPressPosts -Content $content -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL
-                    $posts += $wpPosts
-                    $exportCount += $wpPosts.Count
-                    Write-Host "Found $($wpPosts.Count) posts on WordPress homepage"
+                    # Check if it's WP Grid Builder (check for /tutorials/ page)
+                    $tutorialsUrl = "$BlogURL/tutorials/"
+                    $tutorialsResponse = Invoke-WebRequest -Uri $tutorialsUrl -TimeoutSec $RequestTimeout -ErrorAction SilentlyContinue
+                    
+                    if ($tutorialsResponse -and $tutorialsResponse.Content -like "*wpgb-card*") {
+                        Write-Host "Detected WP Grid Builder plugin, using /tutorials/ page" -ForegroundColor Gray
+                        $wpgbPosts = Get-WPGridBuilderPosts -Content $tutorialsResponse.Content -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL -PageURL $tutorialsUrl
+                        $posts += $wpgbPosts
+                        $exportCount += $wpgbPosts.Count
+                        Write-Host "Found $($wpgbPosts.Count) posts on WP Grid Builder /tutorials/ page"
+                    }
+                    else {
+                        # Use standard WordPress extraction
+                        $wpPosts = Get-WordPressPosts -Content $content -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL
+                        $posts += $wpPosts
+                        $exportCount += $wpPosts.Count
+                        Write-Host "Found $($wpPosts.Count) posts on WordPress homepage"
+                    }
                 }
             }
+        }
+        elseif ($platform -eq 'Ghost') {
+            # Ghost CMS
+            Write-Host "Detected Ghost CMS blog" -ForegroundColor Gray
+            $ghostPosts = Get-GhostPosts -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL
+            $posts += $ghostPosts
+            $exportCount += $ghostPosts.Count
+            Write-Host "Found $($ghostPosts.Count) posts from Ghost"
+        }
+        elseif ($platform -eq 'Squarespace') {
+            # Squarespace
+            Write-Host "Detected Squarespace blog" -ForegroundColor Gray
+            $sqPosts = Get-SquarespacePosts -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL
+            $posts += $sqPosts
+            $exportCount += $sqPosts.Count
+            Write-Host "Found $($sqPosts.Count) posts from Squarespace"
         }
         elseif ($platform -eq 'Hugo') {
             # Parse HTML articles - look for compact-card articles with flexible patterns
@@ -842,7 +1639,11 @@ if ($exportCount -eq 0) {
             }
         }
         else {
-            Write-Host "Platform not specifically supported. Attempting generic extraction..." -ForegroundColor DarkGray
+            Write-Host "Platform not specifically supported. Attempting generic vanilla HTML extraction..." -ForegroundColor DarkGray
+            $vanillaPost = Get-VanillaHTMLPosts -Content $content -StartDate $StartDate -EndDate $EndDate -BlogURL $BlogURL
+            $posts += $vanillaPost
+            $exportCount += $vanillaPost.Count
+            Write-Host "Found $($vanillaPost.Count) posts from vanilla HTML"
         }
     }
     catch {

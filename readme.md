@@ -1,6 +1,6 @@
 # Blog Post Export Script
 
-A flexible PowerShell script that extracts blog post metadata from **8 different blog platforms** automatically. Export dates, titles, categories, and URLs in seconds—no manual work required.
+A flexible PowerShell script that extracts blog post metadata from **12+ different blog platforms** automatically. Export dates, titles, categories, and URLs in seconds—no manual work required.
 
 ## What This Does
 
@@ -16,12 +16,17 @@ A flexible PowerShell script that extracts blog post metadata from **8 different
 |----------|------------------|-----------|---------|
 | **Hugo** | CSS class `compact-card` | Full archive extraction | Static site generator |
 | **WordPress (self-hosted)** | `wp-content` markers | Homepage posts | Standard theme |
+| **WordPress (RSS Discovery)** | RSS feed auto-discovery | Full archive via RSS | Any WordPress variant |
 | **WordPress (alt theme)** | `<time>` datetime tags | Homepage posts | Alternative theme |
 | **WordPress + Display Posts Listing** | `listing-item` elements | Full pagination support | Plugin-enhanced |
 | **WordPress + WP Grid Builder** | `wpgb-card` elements | Per-post fetching | Plugin-enhanced |
 | **WordPress.com** | REST API detection | All published posts | Automattic-hosted |
 | **Jekyll** | `archive__item` divs | Featured posts | Static site generator |
 | **Wix** | RSS feed `/blog-feed.xml` | All posts via RSS | Wix CMS |
+| **Ghost CMS** | RSS feed parsing | All posts via RSS | Ghost platform |
+| **Squarespace** | RSS feed parsing | All posts via RSS | Squarespace CMS |
+| **Vanilla HTML** | Generic link extraction | Post-level fetching | Custom HTML blogs |
+| **MVP Profile** | MVP blog discovery | Blog URL extraction | Microsoft MVP profiles |
 
 ## Quick Start
 
@@ -186,6 +191,30 @@ Supports multiple date formats automatically:
 # Output: blog-export.csv with 50-300+ posts
 ```
 
+### Microsoft MVP Profile
+
+```powershell
+# Extract posts from an MVP's blog (discovered from profile)
+.\export-blog-posts-generic.ps1 -BlogURL "https://mvp.microsoft.com/en-us/PublicProfile/5000656"
+
+# Note: MVP profiles are JavaScript SPAs (React-based)
+# The script looks for blog links in the profile page HTML
+# If your blog is hosted on WordPress.com, Medium, Ghost, Hashnode, or Substack, it may be auto-discovered
+# Otherwise, use your blog's direct URL instead
+
+# Better approach: Use direct blog URL if known
+.\export-blog-posts-generic.ps1 -BlogURL "https://your-mvp-blog.example.com"
+
+# Result: Detects blog platform (WordPress, Ghost, etc.) and extracts posts
+# Output: blog-export.csv with all posts
+```
+
+**For MVP Users:**
+- MVP profile URLs typically contain `/PublicProfile/` in the path
+- Blog links in MVP profiles are loaded dynamically via JavaScript, so static extraction is limited
+- **Recommended approach**: Extract your blog's direct URL from your MVP profile and use that
+- The script will auto-detect your blog's platform (WordPress, Ghost, Squarespace, etc.)
+
 ## What Gets Extracted
 
 For each blog post, the script captures:
@@ -202,6 +231,12 @@ For each blog post, the script captures:
 - Most platforms extract only homepage posts
 - Display Posts Listing plugin handles full pagination automatically
 - Wix extracts all posts available in RSS feed
+
+### MVP Profiles
+- MVP profile pages are React SPAs (Single Page Applications)
+- Blog links are loaded dynamically via JavaScript, not in static HTML
+- Script attempts to auto-discover blogs from common platforms (WordPress.com, Medium, Ghost, Hashnode, Substack)
+- **Best practice**: Use your blog's direct URL instead of the MVP profile URL for reliable extraction
 
 ### Categories
 - Some platforms don't include categories in RSS/homepage
@@ -653,21 +688,26 @@ Contributions are welcome! Areas for improvement:
 
 ## Platform Roadmap
 
-**Currently Supported (8 Platforms):**
+**Currently Supported (12+ Platforms):**
 - ✅ Hugo
-- ✅ WordPress (3+ theme variants)
+- ✅ WordPress (self-hosted, 3+ theme variants)
+- ✅ WordPress with RSS Feed Discovery
 - ✅ WordPress + Display Posts Listing plugin
 - ✅ WordPress + WP Grid Builder plugin
-- ✅ WordPress.com
+- ✅ WordPress.com (REST API)
 - ✅ Jekyll
-- ✅ Wix
+- ✅ Wix (RSS feed)
+- ✅ Ghost CMS (RSS feed)
+- ✅ Squarespace (RSS feed)
+- ✅ Vanilla HTML (generic custom blogs)
+- ✅ Microsoft MVP Profiles (blog discovery)
 
-**Planned Support:**
-- ⏳ WordPress REST API (`/wp-json/wp/v2/posts`) for unlimited pagination
-- ⏳ Ghost
-- ⏳ Medium / Hashnode / Dev.to
+**Future Enhancements:**
+- ⏳ Medium / Hashnode / Dev.to direct platform support
+- ⏳ Substack RSS parsing
+- ⏳ Bluesky / Mastodon blog feeds
 - ⏳ Custom static site generators
-- ⏳ GitHub Pages (Jekyll)
+- ⏳ Website archive extraction (Internet Archive)
 
 ## License
 
