@@ -1,4 +1,4 @@
-# Blog Post Export Script - Generic Edition
+# Blog Post Export Script
 
 ## Overview
 
