@@ -9,6 +9,7 @@ A flexible PowerShell script that extracts blog post metadata from **12+ differe
 - ✅ **Filters by date range** - Extract only posts from a specific time period
 - ✅ **Works with live blogs** - Scrapes URLs directly, no need for local files
 - ✅ **Zero dependencies** - Pure PowerShell, built-in cmdlets only
+- ✅ **MCP Server included** - Use with AI assistants via the [Model Context Protocol](MCP/README.md)
 
 ## Supported Blog Platforms
 
@@ -52,6 +53,65 @@ Outputs: `blog-export.csv` with all posts from the last 5 years
 .\export-blog-posts-generic.ps1 -BlogURL "https://example-blog.com" `
   -OutputFile "my-posts.csv"
 ```
+
+## MCP Server (AI Assistant Integration)
+
+This project also includes an **MCP (Model Context Protocol) server** that exposes the same blog export functionality as tools for AI assistants like GitHub Copilot, Claude, and others.
+
+### Available Tools
+
+| Tool | Description |
+|------|-------------|
+| `export_blog_posts` | Export blog post metadata (date, title, category, URL) from any supported blog |
+| `detect_blog_platform` | Detect which blogging platform a URL is using |
+| `list_supported_platforms` | List all supported blog platforms |
+
+### Quick Start (Local)
+
+```bash
+cd MCP
+pip install -r requirements.txt
+python server.py
+```
+
+### Quick Start (Container)
+
+```bash
+docker run -p 8000:8000 -e MCP_TRANSPORT=1 ghcr.io/harrijaakkonen/export-posts/blog-export-mcp:latest
+```
+
+### VS Code / Copilot Configuration
+
+Add to `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "blog-export": {
+      "command": "python",
+      "args": ["${workspaceFolder}/MCP/server.py"]
+    }
+  }
+}
+```
+
+Or use the container image:
+
+```json
+{
+  "servers": {
+    "blog-export": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "ghcr.io/harrijaakkonen/export-posts/blog-export-mcp:latest"
+      ]
+    }
+  }
+}
+```
+
+> See [MCP/README.md](MCP/README.md) for full documentation including HTTP transport and all configuration options.
 
 ## Parameters
 
