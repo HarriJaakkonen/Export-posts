@@ -56,9 +56,11 @@ Outputs: `blog-export.csv` with all posts from the last 5 years
 
 ## MCP Server (AI Assistant Integration)
 
-This project also includes an **MCP (Model Context Protocol) server** that exposes the same blog export functionality as tools for AI assistants like GitHub Copilot, Claude, and others.
+This project also includes an **MCP (Model Context Protocol) server** — a Python implementation of the same blog export logic, designed for AI assistants like GitHub Copilot, Claude, and others. Instead of running a PowerShell script manually, you can let your AI assistant export posts conversationally.
 
-### Available Tools
+### What It Does
+
+The MCP server exposes three tools that AI assistants can call directly:
 
 | Tool | Description |
 |------|-------------|
@@ -66,23 +68,21 @@ This project also includes an **MCP (Model Context Protocol) server** that expos
 | `detect_blog_platform` | Detect which blogging platform a URL is using |
 | `list_supported_platforms` | List all supported blog platforms |
 
-### Quick Start (Local)
+All 12+ platforms from the PowerShell script are supported. The server runs locally via stdio or remotely via HTTP (container).
 
-```bash
-cd MCP
-pip install -r requirements.txt
-python server.py
-```
+### Example Prompts
 
-### Quick Start (Container)
+Once configured, ask your AI assistant things like:
 
-```bash
-docker run -p 8000:8000 -e MCP_TRANSPORT=1 ghcr.io/harrijaakkonen/export-posts/blog-export-mcp:latest
-```
+> "Export all blog posts from https://example-blog.com from the last year"
 
-### VS Code / Copilot Configuration
+> "What blogging platform does https://example-blog.com use?"
 
-Add to `.vscode/mcp.json`:
+> "List all supported blog platforms"
+
+### Setup
+
+**Local (stdio)** — add to `.vscode/mcp.json`:
 
 ```json
 {
@@ -95,7 +95,7 @@ Add to `.vscode/mcp.json`:
 }
 ```
 
-Or use the container image:
+**Container** — pull from GitHub Container Registry:
 
 ```json
 {
@@ -111,7 +111,7 @@ Or use the container image:
 }
 ```
 
-> See [MCP/README.md](MCP/README.md) for full documentation including HTTP transport and all configuration options.
+See [MCP/README.md](MCP/README.md) for HTTP transport setup, local development, and all configuration options.
 
 ## Parameters
 

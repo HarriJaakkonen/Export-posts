@@ -84,16 +84,6 @@ Add to your `.vscode/mcp.json`:
 }
 ```
 
-## GitHub Container Registry (Free Tier)
-
-This image is published to `ghcr.io` via GitHub Actions. For **public repositories**, this is completely free:
-
-- **GitHub Container Registry**: Free unlimited storage for public packages
-- **GitHub Actions**: 2,000 free minutes/month for public repos
-- No credit card required
-
-The workflow at `.github/workflows/docker-publish.yml` automatically builds and pushes the image on every push to `main` that changes files in `MCP/`.
-
 ## Example Usage
 
 Once configured, ask your AI assistant:
