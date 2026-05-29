@@ -17,6 +17,11 @@ if ($BlogURL -notmatch '^https?://') {
     $BlogURL = "https://$BlogURL"
 }
 
+# If EndDate is provided as date-only (midnight), make it inclusive for the full day.
+if ($EndDate.TimeOfDay -eq [TimeSpan]::Zero) {
+    $EndDate = $EndDate.Date.AddDays(1).AddTicks(-1)
+}
+
 # Load required assemblies
 Add-Type -AssemblyName "System.Web"
 
@@ -1037,7 +1042,7 @@ function Get-WordPressRSSPosts {
                             if ($categories.Count -gt 0) {
                                 $catText = if ($categories[0] -is [string]) { $categories[0] } else { $categories[0].InnerText }
                                 if ($catText -and $catText.Length -gt 0) {
-                                    $category = Normalize-Category -Category $catText
+                                    $category = Normalize-Category -RawCategory $catText
                                 }
                             }
                         }
@@ -1112,7 +1117,7 @@ function Get-GhostPosts {
                                 $firstCat = $categories[0]
                                 $catText = if ($firstCat -is [string]) { $firstCat } else { $firstCat.InnerText }
                                 if ($catText -and $catText.Length -gt 0) {
-                                    $category = Normalize-Category -Category $catText
+                                    $category = Normalize-Category -RawCategory $catText
                                 }
                             }
                         }
@@ -1362,7 +1367,7 @@ function Get-MVPBlogPosts {
                                                             if ($categories.Count -gt 0) {
                                                                 $catText = if ($categories[0] -is [string]) { $categories[0] } else { $categories[0].InnerText }
                                                                 if ($catText -and $catText.Length -gt 0) {
-                                                                    $category = Normalize-Category -Category $catText
+                                                                    $category = Normalize-Category -RawCategory $catText
                                                                 }
                                                             }
                                                         }

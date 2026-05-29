@@ -113,6 +113,14 @@ Once configured, ask your AI assistant things like:
 
 See [MCP/README.md](MCP/README.md) for HTTP transport setup, local development, and all configuration options.
 
+### Recent MCP Updates (May 2026)
+
+- CSV export is now hardened for Excel import by quoting and escaping fields in MCP output.
+- WordPress + WP Grid Builder extraction is now implemented end-to-end in MCP (detection + extraction path).
+- End-date filtering is now inclusive for full-day ranges when using date-only values.
+- Container transport detection now treats `MCP_TRANSPORT` as enabled only when non-empty.
+- Display Posts Listing capability text now reflects current MCP behavior as single-page extraction.
+
 ## Parameters
 
 | Parameter | Default | Description |
@@ -419,16 +427,9 @@ This script is provided as-is for blog content management and auditing purposes.
 
 ---
 
-**Last Updated:** December 7, 2025  
-**Supported Platforms:** 7  
+**Last Updated:** May 29, 2026  
+**Supported Platforms:** 12+  
 **Status:** ✅ Production Ready
-
-2025-12-06 Technology  Example Blog Post Title
-2025-12-03 Technology  Another Blog Post
-2025-11-27 Category1   Third Blog Post Title
-
-Output file: C:\Repos\Export-posts\recent-posts.csv
-```
 
 ## Customization Guide
 
@@ -718,7 +719,8 @@ Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "BlogPostExpo
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 4.0 | 2025-12-07 | **Major:** Added Wix platform support via RSS feed extraction. Added WordPress /blog fallback for DPL plugin. Now supports 7 platforms total with comprehensive documentation. |
+| 4.1 | 2026-05-29 | **Maintenance:** Fixed category normalization parameter mismatch in PowerShell, made date-only end-date filtering inclusive, implemented WP Grid Builder MCP extraction path, hardened MCP CSV escaping for Excel compatibility, corrected MCP transport environment-variable behavior, and aligned documentation with current platform capabilities. |
+| 4.0 | 2025-12-07 | **Major:** Added Wix platform support via RSS feed extraction. Added WordPress /blog fallback for DPL plugin. Expanded multi-platform support with comprehensive documentation. |
 | 3.0 | 2025-12-06 | **Major:** Added multi-platform support - Hugo, WordPress (3 variants), WP Grid Builder, Jekyll. Implemented universal category extraction. Tested with 5 different blog types. |
 | 2.0 | 2024-12-07 | Generic release: added web-based approach, metadata extraction from multiple sources |
 | 1.0 | 2024-12-01 | Initial release with HTML parsing |
@@ -729,7 +731,7 @@ Contributions are welcome! Areas for improvement:
 
 **High Priority:**
 - [ ] WordPress REST API support (`/wp-json/wp/v2/posts`) for paginated posts
-- [ ] Ghost platform detection and extraction
+- [ ] Improve Ghost platform detection reliability on custom themes
 - [ ] Automatic archive page discovery
 - [ ] Full Jekyll archive support (`/blog/` pagination)
 

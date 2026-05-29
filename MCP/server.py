@@ -6,11 +6,9 @@ from 12+ different blog platforms. Supports Hugo, WordPress, Jekyll, Wix,
 Ghost, Squarespace, and more.
 """
 
-import re
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
-from urllib.parse import urlparse, urljoin
 
 import httpx
 from mcp.server.fastmcp import FastMCP
@@ -18,7 +16,6 @@ from mcp.server.fastmcp import FastMCP
 from platforms import (
     detect_platform,
     discover_rss_feed,
-    normalize_category,
     extract_hugo_posts,
     extract_wordpress_posts,
     extract_wordpress_rss_posts,
@@ -26,6 +23,7 @@ from platforms import (
     extract_jekyll_posts,
     extract_wix_posts,
     extract_display_posts_listing,
+    extract_wp_grid_builder_posts,
     extract_ghost_posts,
     extract_squarespace_posts,
     extract_vanilla_html_posts,
@@ -41,6 +39,13 @@ mcp = FastMCP(
 )
 
 HTTP_TIMEOUT = 15.0
+
+
+def csv_escape(value: str) -> str:
+    """Escape a CSV field for semicolon-delimited Excel import."""
+    cleaned = value.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+    escaped = cleaned.replace('"', '""')
+    return f'"{escaped}"'
 
 
 async def fetch_url(client: httpx.AsyncClient, url: str) -> Optional[str]:
@@ -86,7 +91,11 @@ async def export_blog_posts(
         return f"Invalid start_date format: '{start_date}'. Use YYYY-MM-DD."
 
     try:
-        dt_end = datetime.strptime(end_date, "%Y-%m-%d") if end_date else datetime.now()
+        dt_end = (
+            datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1) - timedelta(microseconds=1)
+            if end_date
+            else datetime.now()
+        )
     except ValueError:
         return f"Invalid end_date format: '{end_date}'. Use YYYY-MM-DD."
 
@@ -132,6 +141,9 @@ async def export_blog_posts(
         elif platform == "DisplayPostsListing":
             posts = extract_display_posts_listing(content, blog_url, dt_start, dt_end)
 
+        elif platform == "WP-GridBuilder":
+            posts = await extract_wp_grid_builder_posts(client, content, blog_url, dt_start, dt_end)
+
         elif platform == "Jekyll":
             posts = await extract_jekyll_posts(client, content, blog_url, dt_start, dt_end)
 
@@ -164,9 +176,16 @@ async def export_blog_posts(
     # Build CSV output
     lines = ["Date;Category;Title;URL"]
     for p in posts:
-        # Escape semicolons in title
-        title = p["title"].replace(";", ",")
-        lines.append(f"{p['date']};{p['category']};{title};{p['url']}")
+        lines.append(
+            ";".join(
+                [
+                    csv_escape(p["date"]),
+                    csv_escape(p["category"]),
+                    csv_escape(p["title"]),
+                    csv_escape(p["url"]),
+                ]
+            )
+        )
 
     # Summary
     from collections import Counter
@@ -224,7 +243,7 @@ async def list_supported_platforms() -> str:
         ("Hugo", "CSS class 'compact-card'", "Full archive extraction"),
         ("WordPress (self-hosted)", "'wp-content' markers", "RSS feed + HTML parsing"),
         ("WordPress (RSS)", "RSS feed auto-discovery", "Full archive via RSS"),
-        ("WordPress + Display Posts Listing", "'listing-item' elements", "Full pagination support"),
+        ("WordPress + Display Posts Listing", "'listing-item' elements", "Single page extraction"),
         ("WordPress + WP Grid Builder", "'wpgb-card' elements", "Per-post fetching"),
         ("WordPress.com", "REST API detection", "All published posts via API"),
         ("Jekyll", "'archive__item' divs", "Featured posts with per-post fetch"),
@@ -248,7 +267,7 @@ if __name__ == "__main__":
 
     transport = "stdio"
     # Use streamable-http when running in a container or when --http flag is passed
-    if "--http" in sys.argv or "MCP_TRANSPORT" in os.environ:
+    if "--http" in sys.argv or os.environ.get("MCP_TRANSPORT", "").strip():
         transport = "streamable-http"
         mcp.settings.host = "0.0.0.0"  # noqa: S104 – bind all interfaces in container
         mcp.settings.port = int(os.environ.get("MCP_PORT", "8000"))

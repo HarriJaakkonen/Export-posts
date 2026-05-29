@@ -32,7 +32,7 @@ No parameters. Returns a table of all supported platforms with detection methods
 
 ## Supported Platforms
 
-Hugo, WordPress (self-hosted + .com), WordPress with RSS, WordPress + Display Posts Listing, WordPress + WP Grid Builder, Jekyll, Wix, Ghost CMS, Squarespace, and vanilla HTML blogs.
+Hugo, WordPress (self-hosted + .com), WordPress with RSS, WordPress + Display Posts Listing (single-page extraction), WordPress + WP Grid Builder, Jekyll, Wix, Ghost CMS, Squarespace, and vanilla HTML blogs.
 
 ## Running Locally (stdio)
 
@@ -66,7 +66,7 @@ The container defaults to HTTP transport on port 8000. Override the port with `M
 docker run -p 9000:9000 -e MCP_PORT=9000 ghcr.io/harrijaakkonen/export-posts/blog-export-mcp:latest
 ```
 
-For stdio mode in a container (e.g. VS Code Docker config), unset `MCP_TRANSPORT`:
+For stdio mode in a container (e.g. VS Code Docker config), set `MCP_TRANSPORT` to an empty value:
 
 ```bash
 docker run -i --rm -e MCP_TRANSPORT= ghcr.io/harrijaakkonen/export-posts/blog-export-mcp:latest
@@ -76,7 +76,7 @@ docker run -i --rm -e MCP_TRANSPORT= ghcr.io/harrijaakkonen/export-posts/blog-ex
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MCP_TRANSPORT` | *(unset)* | Set to any value to use HTTP transport instead of stdio. Set in container by default. |
+| `MCP_TRANSPORT` | *(unset)* | Set to a non-empty value to use HTTP transport instead of stdio. Set in container by default. |
 | `MCP_PORT` | `8000` | HTTP port when running in HTTP transport mode |
 
 You can also pass `--http` as a CLI argument to `server.py` to enable HTTP transport without setting `MCP_TRANSPORT`.

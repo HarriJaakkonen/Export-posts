@@ -615,6 +615,44 @@ def extract_display_posts_listing(
 
 
 # ---------------------------------------------------------------------------
+# WP Grid Builder (WP plugin)
+# ---------------------------------------------------------------------------
+
+
+async def extract_wp_grid_builder_posts(
+    client: httpx.AsyncClient,
+    content: str,
+    blog_url: str,
+    start: datetime,
+    end: datetime,
+) -> list[dict]:
+    posts: list[dict] = []
+    seen_urls: set[str] = set()
+
+    pattern = (
+        r'<article[^>]*class="[^"]*wpgb-card[^"]*"[^>]*>.*?'
+        r'<h3[^>]*>\s*<a[^>]*href="([^"]+)"[^>]*>([^<]+)</a>\s*</h3>'
+    )
+
+    for m in re.finditer(pattern, content, re.S):
+        raw_url, title = m.group(1).strip(), m.group(2).strip()
+        post_url = raw_url if raw_url.startswith("http") else _resolve_url(blog_url, raw_url)
+        if post_url in seen_urls:
+            continue
+
+        post_content = await _fetch(client, post_url)
+        if not post_content:
+            continue
+
+        dt = _extract_date_from_post_page(post_content)
+        if dt and _in_range(dt, start, end):
+            posts.append(_make_post(dt, title, post_url))
+            seen_urls.add(post_url)
+
+    return posts
+
+
+# ---------------------------------------------------------------------------
 # Ghost
 # ---------------------------------------------------------------------------
 
